@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+    <SupportedOSPlatformVersion>10.0.19041.0</SupportedOSPlatformVersion>
+    <UseWPF>true</UseWPF>
+    <!-- Only for the icon by the clock (NotifyIcon). -->
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>NightTech.Lifeline</RootNamespace>
+    <AssemblyName>NightTechLifeline</AssemblyName>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\lifeline.ico</ApplicationIcon>
+
+    <Product>Night Tech Lifeline</Product>
+    <Company>Night Tech Solutions</Company>
+    <Authors>Night Tech Solutions</Authors>
+    <Description>Night Tech Lifeline - free scam rescue button for Windows</Description>
+    <Copyright>© 2026 Night Tech Solutions</Copyright>
+    <Version>1.0.0</Version>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+
+    <!-- One self-contained exe: no .NET install needed on the person's PC -->
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>true</SelfContained>
+    <PublishSingleFile>true</PublishSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    <DebugType>none</DebugType>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\NightTech.Lifeline.Core\NightTech.Lifeline.Core.csproj" />
+    <Resource Include="Assets\lifeline.ico" />
+    <Resource Include="Assets\lifeline-256.png" />
+    <Resource Include="Assets\nighttech-logo.png" />
+  </ItemGroup>
+</Project>

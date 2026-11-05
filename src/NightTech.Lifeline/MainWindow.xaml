@@ -1,0 +1,87 @@
+<Window x:Class="NightTech.Lifeline.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Night Tech Lifeline" Width="780" Height="900" MinWidth="560" MinHeight="500"
+        WindowStartupLocation="CenterScreen" FontFamily="Segoe UI" FontSize="18"
+        Background="{StaticResource Gray}" Foreground="{StaticResource Ink}"
+        Icon="pack://application:,,,/Assets/lifeline.ico">
+  <DockPanel>
+    <!-- Header -->
+    <Border DockPanel.Dock="Top" Background="{StaticResource Navy}" Padding="24,16">
+      <DockPanel>
+        <Image Source="pack://application:,,,/Assets/lifeline-256.png" Width="56" Height="56" Margin="0,0,16,0" />
+        <StackPanel VerticalAlignment="Center">
+          <TextBlock Text="Night Tech Lifeline" Foreground="White" FontSize="28" FontWeight="Bold" />
+          <TextBlock Text="Help when something on your computer feels wrong" Foreground="#E2E8F0" FontSize="17" />
+        </StackPanel>
+      </DockPanel>
+    </Border>
+
+    <!-- Footer -->
+    <Border DockPanel.Dock="Bottom" Background="White" BorderBrush="{StaticResource Line}" BorderThickness="0,1,0,0" Padding="24,10">
+      <DockPanel>
+        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+          <Button Content="Settings" Style="{StaticResource Small}" Click="Settings_Click" />
+          <Button Content="About" Style="{StaticResource Small}" Click="About_Click" Margin="0" />
+        </StackPanel>
+        <TextBlock x:Name="HotkeyNote" FontSize="15" Foreground="{StaticResource Muted}" VerticalAlignment="Center" TextWrapping="Wrap" />
+      </DockPanel>
+    </Border>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto" Focusable="False">
+      <StackPanel Margin="24,20,24,24">
+
+        <!-- What happened (shown after a button is pressed) -->
+        <Border x:Name="ResultBox" Visibility="Collapsed" Background="#E6F4EA" BorderBrush="#2F855A" BorderThickness="3" CornerRadius="10" Padding="20,16" Margin="0,0,0,18">
+          <StackPanel>
+            <TextBlock x:Name="ResultTitle" FontSize="24" FontWeight="Bold" Foreground="#22543D" Margin="0,0,0,6" />
+            <TextBlock x:Name="ResultText" FontSize="19" TextWrapping="Wrap" />
+            <TextBlock FontSize="19" TextWrapping="Wrap" Margin="0,10,0,0" FontWeight="SemiBold"
+                       Text="Don't call any number the warning showed you. If you'd like someone to check your computer, call Night Tech." />
+            <Button x:Name="WifiOnButton" Visibility="Collapsed" Content="Turn Wi-Fi back on (only when Night Tech says it's safe)"
+                    Style="{StaticResource Plain}" Margin="0,12,0,0" Click="WifiOn_Click" />
+          </StackPanel>
+        </Border>
+
+        <!-- The two emergency buttons -->
+        <Button x:Name="RescueButton" Style="{StaticResource Big}" Click="Rescue_Click" AutomationProperties.Name="Get me out of this scam screen">
+          <StackPanel>
+            <TextBlock x:Name="RescueTitle" FontSize="26" FontWeight="Bold" TextWrapping="Wrap" />
+            <TextBlock x:Name="RescueSub" FontSize="18" FontWeight="Normal" TextWrapping="Wrap" Opacity="0.95" />
+          </StackPanel>
+        </Button>
+        <Button x:Name="CutOffButton" Style="{StaticResource BigNavy}" Click="CutOff_Click" AutomationProperties.Name="Someone is on my computer">
+          <StackPanel>
+            <TextBlock x:Name="CutOffTitle" FontSize="26" FontWeight="Bold" TextWrapping="Wrap" />
+            <TextBlock x:Name="CutOffSub" FontSize="18" FontWeight="Normal" TextWrapping="Wrap" Opacity="0.95" />
+          </StackPanel>
+        </Button>
+
+        <!-- Real people -->
+        <TextBlock Text="Talk to a real person" FontSize="22" FontWeight="Bold" Foreground="{StaticResource Navy}" Margin="0,14,0,10" />
+        <Button x:Name="CallButton" Style="{StaticResource Plain}" Click="Call_Click" />
+        <Button x:Name="TextButton" Style="{StaticResource Plain}" Click="Text_Click" />
+        <Button x:Name="FamilyButton" Style="{StaticResource Plain}" Click="Family_Click" />
+        <Button Content="Let Night Tech help me on my screen" Style="{StaticResource Plain}" Click="Remote_Click" />
+        <TextBlock x:Name="HoursText" FontSize="15" Foreground="{StaticResource Muted}" TextWrapping="Wrap" Margin="2,0,0,0" />
+
+        <!-- Plain facts -->
+        <Border Background="White" BorderBrush="{StaticResource Line}" BorderThickness="1" CornerRadius="10" Padding="20,16" Margin="0,22,0,0">
+          <StackPanel>
+            <TextBlock Text="Remember" FontSize="22" FontWeight="Bold" Foreground="{StaticResource Navy}" Margin="0,0,0,8" />
+            <ItemsControl x:Name="FactsList" />
+            <ItemsControl x:Name="NeverList" Margin="0,8,0,0" />
+          </StackPanel>
+        </Border>
+        <Border Background="White" BorderBrush="{StaticResource Orange}" BorderThickness="4,1,1,1" CornerRadius="10" Padding="20,16" Margin="0,16,0,0">
+          <StackPanel>
+            <TextBlock Text="Already called the number, let someone on, or paid?" FontSize="22" FontWeight="Bold" Foreground="{StaticResource Navy}" TextWrapping="Wrap" Margin="0,0,0,8" />
+            <ItemsControl x:Name="ActedList" />
+            <TextBlock Text="You haven't done anything wrong. Scammers are very good at this. Acting quickly is what matters."
+                       FontSize="18" TextWrapping="Wrap" Margin="0,8,0,0" />
+          </StackPanel>
+        </Border>
+      </StackPanel>
+    </ScrollViewer>
+  </DockPanel>
+</Window>

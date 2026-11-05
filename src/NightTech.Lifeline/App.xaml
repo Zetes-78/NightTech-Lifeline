@@ -1,0 +1,69 @@
+<Application x:Class="NightTech.Lifeline.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             ShutdownMode="OnExplicitShutdown">
+  <Application.Resources>
+    <SolidColorBrush x:Key="Navy" Color="#1A365D" />
+    <SolidColorBrush x:Key="Orange" Color="#FF6B35" />
+    <SolidColorBrush x:Key="OrangeDark" Color="#C2410C" />
+    <SolidColorBrush x:Key="Gray" Color="#F7FAFC" />
+    <SolidColorBrush x:Key="Line" Color="#E2E8F0" />
+    <SolidColorBrush x:Key="Muted" Color="#4A5568" />
+    <SolidColorBrush x:Key="Ink" Color="#1A202C" />
+
+    <!-- Big, high-contrast buttons with a thick focus ring, for people who are scared or don't see well. -->
+    <Style x:Key="Big" TargetType="Button">
+      <Setter Property="Background" Value="{StaticResource OrangeDark}" />
+      <Setter Property="Foreground" Value="White" />
+      <Setter Property="FontSize" Value="24" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Padding" Value="22,16" />
+      <Setter Property="Margin" Value="0,0,0,14" />
+      <Setter Property="HorizontalContentAlignment" Value="Left" />
+      <Setter Property="Cursor" Value="Hand" />
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="Button">
+            <Border x:Name="b" Background="{TemplateBinding Background}" CornerRadius="10" Padding="{TemplateBinding Padding}" BorderBrush="{StaticResource Ink}" BorderThickness="0">
+              <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="Center" />
+            </Border>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="b" Property="Opacity" Value="0.92" /></Trigger>
+              <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="b" Property="BorderThickness" Value="4" /></Trigger>
+              <Trigger Property="IsEnabled" Value="False"><Setter TargetName="b" Property="Opacity" Value="0.5" /></Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+    <Style x:Key="BigNavy" TargetType="Button" BasedOn="{StaticResource Big}">
+      <Setter Property="Background" Value="{StaticResource Navy}" />
+    </Style>
+    <Style x:Key="Plain" TargetType="Button" BasedOn="{StaticResource Big}">
+      <Setter Property="Background" Value="White" />
+      <Setter Property="Foreground" Value="{StaticResource Navy}" />
+      <Setter Property="FontSize" Value="19" />
+      <Setter Property="Padding" Value="16,12" />
+      <Setter Property="Margin" Value="0,0,0,10" />
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="Button">
+            <Border x:Name="b" Background="{TemplateBinding Background}" CornerRadius="8" Padding="{TemplateBinding Padding}" BorderBrush="{StaticResource Navy}" BorderThickness="2">
+              <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="Center" />
+            </Border>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="b" Property="Background" Value="#EDF2F7" /></Trigger>
+              <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="b" Property="BorderThickness" Value="4" /></Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+    <Style x:Key="Small" TargetType="Button" BasedOn="{StaticResource Plain}">
+      <Setter Property="FontSize" Value="15" />
+      <Setter Property="Padding" Value="12,6" />
+      <Setter Property="Margin" Value="0,0,10,0" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+    </Style>
+  </Application.Resources>
+</Application>

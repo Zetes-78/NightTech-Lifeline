@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- What Lifeline closes, which files it moves aside, and the words it shows. No Windows calls here, so it can be tested anywhere. -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>NightTech.Lifeline.Core</RootNamespace>
+    <AssemblyName>NightTech.Lifeline.Core</AssemblyName>
+    <Company>Night Tech Solutions</Company>
+    <Product>Night Tech Lifeline</Product>
+    <Copyright>© 2026 Night Tech Solutions</Copyright>
+  </PropertyGroup>
+
+</Project>
