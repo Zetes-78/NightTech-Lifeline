@@ -99,6 +99,16 @@ Check(!Settings.FromJson(new string(' ', 70000) + "{}").WelcomeShown, "oversized
 Check(FamilyContact.CleanName(new string('a', 80)).Length == 40, "name trimmed to 40");
 Check(!new FamilyContact { Name = "", Phone = "+18645551212" }.IsSet, "contact needs a name");
 
+// ---------- Family contact can't be dressed up as someone official ----------
+Check(FamilyContact.LooksOfficial("Microsoft Support") && FamilyContact.LooksOfficial("bank security") && FamilyContact.LooksOfficial("IRS"), "official names refused");
+Check(FamilyContact.LooksOfficial("Night Tech") && FamilyContact.LooksOfficial("Apple-Care Help Desk") && FamilyContact.LooksOfficial("windows   tech"), "official names with punctuation refused");
+Check(!FamilyContact.LooksOfficial("Amy") && !FamilyContact.LooksOfficial("My son Bobby") && !FamilyContact.LooksOfficial("Banks Family") && !FamilyContact.LooksOfficial("Applebee"), "real names allowed (whole words only)");
+Check(!Settings.FromJson("{\"Family\":{\"Name\":\"Microsoft Support\",\"Phone\":\"864 555 1212\"}}").Family.IsSet, "official name in saved file dropped");
+Check(FamilyContact.CleanName("Amy\u2066\u200B\u200E") == "Amy", "invisible formatting characters removed");
+var dated = Settings.FromJson(new Settings { Family = new FamilyContact { Name = "Amy", Phone = "+18645551212", Added = new DateTime(2026, 11, 5) } }.ToJson());
+Check(dated.Family.Added == new DateTime(2026, 11, 5), "added date kept");
+Check(Lists.RemoteToolFor("TeamViewer_Service.exe")?.Name == "TeamViewer" && Lists.RemoteToolFor("SRService")?.Name == "Splashtop", "service names known");
+
 // ---------- Words ----------
 Check(Words.JoinNames(new[] { "A" }) == "A" && Words.JoinNames(new[] { "A", "B" }) == "A and B" && Words.JoinNames(new[] { "A", "B", "C" }) == "A, B and C", "join names");
 Check(Words.JoinNames(Array.Empty<string>()) == "", "join none");
@@ -107,14 +117,18 @@ Check(Words.RescueSummary(rr).StartsWith("No web browsers were open"), "nothing 
 rr.BrowsersClosed["Google Chrome"] = 12;
 rr.TabsSaved.Add(new MoveItem("Google Chrome", "a", "b", true));
 var sum = Words.RescueSummary(rr);
-Check(sum.Contains("closed Google Chrome") && sum.Contains("won't come back"), "rescue summary");
+Check(sum.StartsWith("The scam screen is closed") && sum.Contains("closed Google Chrome") && sum.Contains("When you open Google Chrome again") && sum.Contains("shouldn't come back") && !sum.Contains("safe now"), "rescue summary is honest");
 rr.BrowsersStillOpen.Add("Microsoft Edge");
-Check(Words.RescueSummary(rr).Contains("Microsoft Edge would not close") && !Words.RescueSummary(rr).Contains("won't come back"), "still-open summary");
+Check(Words.RescueSummary(rr).Contains("Microsoft Edge would not close") && !Words.RescueSummary(rr).Contains("shouldn't come back"), "still-open summary");
 rr.TabsNotMoved.Add("x");
 Check(Words.RescueSummary(rr).Contains("press this button again"), "not-moved summary");
 Check(Words.LogLine(rr).Contains("Google Chrome x12") && Words.LogLine(rr).Contains("2026-11-05 14:30:12"), "rescue log line");
 var co = new CutOffResult { When = rr.When, WifiTurnedOff = true };
-Check(Words.CutOffSummary(co).Contains("didn't find any") && Words.CutOffSummary(co).Contains("Wi-Fi is off"), "cut-off nothing found");
+Check(Words.CutOffSummary(co).Contains("we know about") && Words.CutOffSummary(co).Contains("Wi-Fi is off"), "cut-off nothing found");
+Check(co.SurelyCutOff, "wifi off and nothing running: cut off");
+Check(!new CutOffResult { WifiTurnedOff = null }.SurelyCutOff, "no wifi radio (cable): never claims cut off");
+Check(!new CutOffResult { WifiTurnedOff = false }.SurelyCutOff, "wifi refused: never claims cut off");
+Check(new CutOffResult { WifiTurnedOff = null }.WifiTurnedOff is null && Words.CutOffSummary(new CutOffResult { WifiTurnedOff = null }).Contains("unplug its internet cable"), "cable computer told to unplug");
 co.RemoteToolsClosed.Add("AnyDesk"); co.RemoteToolsStillRunning.Add("TeamViewer"); co.WifiTurnedOff = false; co.WifiNote = "no Wi-Fi";
 var cs = Words.CutOffSummary(co);
 Check(cs.Contains("closed AnyDesk") && cs.Contains("TeamViewer is still running") && cs.Contains("couldn't turn off Wi-Fi (no Wi-Fi)"), "cut-off summary");

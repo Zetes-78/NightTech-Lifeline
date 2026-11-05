@@ -64,7 +64,7 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Messages]
 WelcomeLabel2=This installs [name/ver] on your computer.%n%nIf a scary warning ever takes over your screen, or you think a scammer is on your computer, Lifeline helps you get out of it and reach someone you trust. It's free, with no ads, accounts or tracking.%n%nClose other apps before you continue.
-FinishedLabel=Night Tech Lifeline is installed. Its icon sits by the clock, and Ctrl+Alt+H opens it any time.
+FinishedLabel=Night Tech Lifeline is installed. Its round icon sits by the clock (you may need to click the ^ arrow to see it), and Ctrl+Alt+H opens it.
 
 [Tasks]
 Name: "startup"; Description: "Start Lifeline when I sign in to Windows (recommended)"; GroupDescription: "Options:"
@@ -85,6 +85,13 @@ Name: "{autodesktop}\Scam help - Night Tech Lifeline"; Filename: "{app}\{#ExeNam
 Filename: "{app}\{#ExeName}"; Description: "{cm:LaunchProgram,{#AppName}}"; Flags: nowait postinstall skipifsilent
 
 [Code]
+// Unticking "Start Lifeline when I sign in" on an upgrade removes the entry an earlier install made.
+procedure CurStepChanged(CurStep: TSetupStep);
+begin
+  if (CurStep = ssPostInstall) and not WizardIsTaskSelected('startup') then
+    RegDeleteValue(HKEY_CURRENT_USER, 'Software\Microsoft\Windows\CurrentVersion\Run', 'NightTechLifeline');
+end;
+
 // Lifeline's folder holds the browser tabs it moved aside and the family contact.
 // Uninstalling asks before deleting it, so saved tabs aren't lost by surprise.
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);

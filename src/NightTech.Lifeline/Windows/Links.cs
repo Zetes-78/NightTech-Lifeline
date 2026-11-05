@@ -18,6 +18,9 @@ public static class Links
     {
         try
         {
+            // Store apps like Phone Link register through the person's default-app choice rather than a command.
+            using (var choice = Registry.CurrentUser.OpenSubKey($@"Software\Microsoft\Windows\Shell\Associations\UrlAssociations\{scheme}\UserChoice"))
+                if (choice?.GetValue("ProgId") is string id && id.Length > 0) return true;
             using var k = Registry.ClassesRoot.OpenSubKey(scheme);
             if (k?.GetValue("URL Protocol") is null) return false;
             using var cmd = Registry.ClassesRoot.OpenSubKey(scheme + @"\shell\open\command");
@@ -43,7 +46,8 @@ public static class Links
         try
         {
             System.IO.Directory.CreateDirectory(path);
-            using var p = Process.Start(new ProcessStartInfo("explorer.exe") { UseShellExecute = false, ArgumentList = { path } });
+            var explorer = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "explorer.exe");
+            using var p = Process.Start(new ProcessStartInfo(explorer) { UseShellExecute = false, ArgumentList = { path } });
         }
         catch (Exception e) when (e is System.ComponentModel.Win32Exception or System.IO.IOException or UnauthorizedAccessException) { }
     }

@@ -28,9 +28,11 @@ public partial class MainWindow : Window
         Fill(NeverList, Words.NeverDo);
         Fill(ActedList, Words.IfAlreadyActed);
         HotkeyNote.Text = App.HotkeyText.Length > 0
-            ? $"Press {App.HotkeyText} any time to open Lifeline, even when a warning fills the screen."
+            ? $"Press {App.HotkeyText} any time to open Lifeline. If the keys don't work, click the round Lifeline icon by the clock."
             : "Lifeline's shortcut keys are being used by another program. Use the Lifeline icon by the clock instead.";
         RefreshFamily();
+        MaxHeight = SystemParameters.WorkArea.Height;
+        if (Height > MaxHeight) Height = MaxHeight;
     }
 
     private static void Fill(ItemsControl list, string[] lines)
@@ -43,7 +45,7 @@ public partial class MainWindow : Window
     {
         var f = App.Settings.Family;
         FamilyButton.Content = f.IsSet
-            ? $"Call {f.Name}:  {PhoneNumber.Display(f.Phone)}"
+            ? $"Call {f.Name}:  {PhoneNumber.Display(f.Phone)}" + (f.Added is DateTime d ? $"\n(added {d:MMMM d, yyyy})" : "")
             : "Add a family member or friend to call";
     }
 
@@ -73,8 +75,12 @@ public partial class MainWindow : Window
     public async void StartRescue()
     {
         if (_busy) return;
+        _busy = true;
         if (MessageBox.Show(this, Words.ConfirmRescue, "Get me out of this scam screen", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.Yes) != MessageBoxResult.Yes)
+        {
+            _busy = false;
             return;
+        }
         SetBusy(true, "Closing your web browsers...");
         try
         {
@@ -91,13 +97,17 @@ public partial class MainWindow : Window
     private async void CutOff_Click(object sender, RoutedEventArgs e)
     {
         if (_busy) return;
+        _busy = true;
         if (MessageBox.Show(this, Words.ConfirmCutOff, "Someone is on my computer", MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.Yes) != MessageBoxResult.Yes)
+        {
+            _busy = false;
             return;
+        }
         SetBusy(true, "Cutting off remote access...");
         try
         {
             var r = await CutOff.RunAsync();
-            ShowResult(r.RemoteToolsStillRunning.Count == 0 ? "Remote access is cut off" : "Unplug the internet now", Words.CutOffSummary(r), wifiButton: r.WifiTurnedOff == true);
+            ShowResult(r.SurelyCutOff ? "Remote access is cut off" : "Unplug the internet now", Words.CutOffSummary(r), wifiButton: r.WifiTurnedOff == true);
         }
         catch (Exception ex) when (ex is not OutOfMemoryException)
         {
@@ -109,7 +119,9 @@ public partial class MainWindow : Window
     private async void WifiOn_Click(object sender, RoutedEventArgs e)
     {
         WifiOnButton.IsEnabled = false;
-        bool ok = await CutOff.WifiOnAsync();
+        bool ok;
+        try { ok = await CutOff.WifiOnAsync(); }
+        catch (Exception ex) when (ex is not OutOfMemoryException) { ok = false; }
         WifiOnButton.Content = ok ? "Wi-Fi is back on" : "Couldn't turn Wi-Fi on. Use the Wi-Fi button by the clock.";
     }
 
@@ -150,9 +162,10 @@ public partial class MainWindow : Window
 
     private void Remote_Click(object sender, RoutedEventArgs e)
     {
-        Links.Open(Brand.RemoteSupport);
-        MessageBox.Show(this, $"Call Night Tech at {Brand.Phone} first. We'll tell you exactly what to click, and you'll see everything we do.\n\nNever let anyone else connect to your computer.",
+        MessageBox.Show(this, $"Call Night Tech at {Brand.Phone} first. We'll tell you exactly what to click, and you'll see everything we do.\n\nNever let anyone else connect to your computer.\n\nChoose OK to open Night Tech's remote help page.",
             "Let Night Tech help me", MessageBoxButton.OK, MessageBoxImage.Information);
+        Topmost = false;
+        Links.Open(Brand.RemoteSupport);
     }
 
     /// <summary>Opens the phone app if Windows has one (Phone Link and similar); otherwise shows the number to dial.</summary>
@@ -173,7 +186,7 @@ public partial class MainWindow : Window
         var win = Dialog("Lifeline settings");
         var panel = new StackPanel { Margin = new Thickness(24) };
         panel.Children.Add(new TextBlock { Text = "Family member or friend to call", FontSize = 20, FontWeight = FontWeights.Bold, Margin = new Thickness(0, 0, 0, 6) });
-        panel.Children.Add(new TextBlock { Text = "Lifeline shows a big button to call this person. It stays on this computer and is never sent anywhere.", TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 14) });
+        panel.Children.Add(new TextBlock { Text = "Lifeline shows a big button to call this person. Only add someone you know personally. Never add a number a caller or a pop-up gives you. It stays on this computer and is never sent anywhere.", TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 14) });
         panel.Children.Add(new TextBlock { Text = "Name" });
         var name = new TextBox { Text = current.Name, MaxLength = FamilyContact.MaxName, FontSize = 18, Padding = new Thickness(6), Margin = new Thickness(0, 4, 0, 12) };
         panel.Children.Add(name);
@@ -193,12 +206,18 @@ public partial class MainWindow : Window
             var p = PhoneNumber.Normalize(phone.Text);
             if (n.Length == 0) { error.Text = "Type a name."; return; }
             if (p is null) { error.Text = "That phone number doesn't look right. Type it like (864) 555-1212."; return; }
+            if (FamilyContact.LooksOfficial(n))
+            {
+                error.Text = "This button is only for someone you know personally, like a son, daughter or friend. Companies, banks and \"support\" lines don't go here. If someone asked you to add their number, that's a scam.";
+                return;
+            }
             var s = App.Settings;
-            s.Family = new FamilyContact { Name = n, Phone = p };
+            s.Family = new FamilyContact { Name = n, Phone = p, Added = DateTime.Now };
             App.SaveSettings(s);
+            Store.Log($"{DateTime.Now:yyyy-MM-dd HH:mm:ss} FAMILY set name=\"{n}\" phone={p}");
             win.Close();
         };
-        clear.Click += (_, _) => { var s = App.Settings; s.Family = new FamilyContact(); App.SaveSettings(s); win.Close(); };
+        clear.Click += (_, _) => { var s = App.Settings; s.Family = new FamilyContact(); App.SaveSettings(s); Store.Log($"{DateTime.Now:yyyy-MM-dd HH:mm:ss} FAMILY removed"); win.Close(); };
         buttons.Children.Add(save);
         if (current.IsSet) buttons.Children.Add(clear);
         buttons.Children.Add(cancel);

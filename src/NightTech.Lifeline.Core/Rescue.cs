@@ -26,6 +26,9 @@ public sealed class CutOffResult
     public List<string> RemoteToolsStillRunning { get; } = new();
     public bool? WifiTurnedOff { get; set; }
     public string WifiNote { get; set; } = "";
+
+    /// <summary>Only true when Wi-Fi really went off and nothing we found is still running. A cable or an unknown tool can still connect.</summary>
+    public bool SurelyCutOff => WifiTurnedOff == true && RemoteToolsStillRunning.Count == 0;
 }
 
 /// <summary>The words Lifeline shows. Calm, short and plain, written for someone who is scared.</summary>
@@ -73,11 +76,11 @@ public static class Words
         if (!r.ClosedAnything && r.BrowsersStillOpen.Count == 0)
             return "No web browsers were open. If a scary message is still on the screen, hold the power button until the computer turns off, then call Night Tech.";
         var sb = new StringBuilder();
-        if (r.ClosedAnything) sb.Append("You're safe now. We closed ").Append(JoinNames(r.BrowsersClosed.Keys)).Append('.');
+        if (r.ClosedAnything) sb.Append("The scam screen is closed. We closed ").Append(JoinNames(r.BrowsersClosed.Keys)).Append('.');
         if (r.BrowsersStillOpen.Count > 0)
             sb.Append(sb.Length > 0 ? " " : "").Append(JoinNames(r.BrowsersStillOpen)).Append(" would not close. Hold the power button until the computer turns off, then call Night Tech.");
         else if (r.TabsSaved.Count > 0)
-            sb.Append(" When you open your browser again, the scam page won't come back.");
+            sb.Append(" When you open ").Append(JoinNames(r.TabsSaved.Select(t => t.Browser))).Append(" again, the scam page shouldn't come back. If it does, press this button again and call Night Tech.");
         if (r.TabsNotMoved.Count > 0)
             sb.Append(" Some saved tabs couldn't be moved, so the page might reopen. If it does, press this button again.");
         return sb.ToString();
@@ -89,12 +92,12 @@ public static class Words
         if (r.RemoteToolsClosed.Count > 0) parts.Add("We closed " + JoinNames(r.RemoteToolsClosed) + ".");
         if (r.RemoteToolsStillRunning.Count > 0)
             parts.Add(JoinNames(r.RemoteToolsStillRunning) + " is still running in the background. Unplug the internet cable or turn off the computer, then call Night Tech.");
-        if (r.RemoteToolsClosed.Count == 0 && r.RemoteToolsStillRunning.Count == 0) parts.Add("We didn't find any remote-control apps running.");
+        if (r.RemoteToolsClosed.Count == 0 && r.RemoteToolsStillRunning.Count == 0) parts.Add("We didn't find any of the remote-control apps we know about.");
         parts.Add(r.WifiTurnedOff switch
         {
-            true => "Wi-Fi is off. If your computer uses an internet cable, unplug it too.",
+            true => "Wi-Fi is off. If your computer also uses an internet cable, unplug it too.",
             false => "We couldn't turn off Wi-Fi" + (r.WifiNote.Length > 0 ? " (" + r.WifiNote + ")" : "") + ". Unplug the internet cable or turn off your router.",
-            null => "If your computer uses an internet cable, unplug it.",
+            null => "This computer doesn't use Wi-Fi, so unplug its internet cable now.",
         });
         return string.Join(" ", parts);
     }

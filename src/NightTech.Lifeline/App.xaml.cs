@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -34,30 +35,36 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+        // One unexpected error must never quietly take the icon and the shortcut away.
+        DispatcherUnhandledException += (_, a) => { Store.Log($"{DateTime.Now:yyyy-MM-dd HH:mm:ss} ERROR {a.Exception.GetType().Name}: {a.Exception.Message}"); a.Handled = true; };
+        AppDomain.CurrentDomain.UnhandledException += (_, a) => Store.Log($"{DateTime.Now:yyyy-MM-dd HH:mm:ss} FATAL {a.ExceptionObject}");
+        System.Threading.Tasks.TaskScheduler.UnobservedTaskException += (_, a) => { Store.Log($"{DateTime.Now:yyyy-MM-dd HH:mm:ss} TASK {a.Exception.Message}"); a.SetObserved(); };
         bool background = e.Args.Any(a => a.Equals("--background", StringComparison.OrdinalIgnoreCase));
 
-        _single = new Mutex(true, MutexName, out bool first);
-        if (!first)
+        // The show-window event is made before the one-copy mutex, so a second copy started a moment later always finds it.
+        bool first;
+        try
         {
-            // Already running: ask that copy to show its window, then leave.
-            try
+            _showEvent = new EventWaitHandle(false, EventResetMode.AutoReset, ShowEventName, out bool createdEvent);
+            _single = new Mutex(true, MutexName, out first);
+            if (!first && !createdEvent)
             {
-                if (EventWaitHandle.TryOpenExisting(ShowEventName, out var ev))
-                {
-                    using (ev)
-                    {
-                        if (!background) { AllowSetForegroundWindow(-1); ev.Set(); }
-                        Shutdown();
-                        return;
-                    }
-                }
+                // Already running: ask that copy to show its window, then leave.
+                if (!background) { AllowSetForegroundWindow(-1); _showEvent.Set(); }
+                _showEvent.Dispose();
+                _showEvent = null;
+                Shutdown();
+                return;
             }
-            catch (Exception ex) when (ex is UnauthorizedAccessException or WaitHandleCannotBeOpenedException) { }
-            // Couldn't reach the other copy: carry on and open our own window rather than leave the person with nothing.
         }
-
-        _showEvent = new EventWaitHandle(false, EventResetMode.AutoReset, ShowEventName, out _);
-        _showWait = ThreadPool.RegisterWaitForSingleObject(_showEvent, (_, _) => Dispatcher.BeginInvoke(() => ShowWindow()), null, Timeout.Infinite, false);
+        catch (Exception ex) when (ex is UnauthorizedAccessException or WaitHandleCannotBeOpenedException or IOException)
+        {
+            // A copy started as administrator holds the names. Carry on without them rather than leave the person with nothing.
+            _showEvent?.Dispose();
+            _showEvent = null;
+        }
+        if (_showEvent is not null)
+            _showWait = ThreadPool.RegisterWaitForSingleObject(_showEvent, (_, _) => Dispatcher.BeginInvoke(() => ShowWindow()), null, Timeout.Infinite, false);
 
         Settings = Store.LoadSettings();
         _hotkey = new Hotkey(() => ShowWindow());
@@ -113,7 +120,7 @@ public partial class App : Application
     private void AskToQuit()
     {
         var keys = HotkeyText.Length > 0 ? $" and {HotkeyText} won't work" : "";
-        if (MessageBox.Show($"If you close Lifeline, its icon goes away{keys} until you restart the computer or open Lifeline again.\n\nClose Lifeline?",
+        if (MessageBox.Show($"If you close Lifeline, its icon goes away{keys} until you open Lifeline again.\n\nClose Lifeline?",
                 "Night Tech Lifeline", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No) == MessageBoxResult.Yes)
             Shutdown();
     }

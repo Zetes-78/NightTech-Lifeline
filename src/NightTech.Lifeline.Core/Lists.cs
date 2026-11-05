@@ -33,7 +33,7 @@ public static class Lists
     public static readonly IReadOnlyList<RemoteTool> RemoteTools = new[]
     {
         new RemoteTool("AnyDesk", new[] { "anydesk" }),
-        new RemoteTool("TeamViewer", new[] { "teamviewer", "teamviewer_desktop", "tv_w32", "tv_x64", "teamviewerqs" }),
+        new RemoteTool("TeamViewer", new[] { "teamviewer", "teamviewer_desktop", "teamviewer_service", "tv_w32", "tv_x64", "teamviewerqs" }),
         new RemoteTool("UltraViewer", new[] { "ultraviewer_desktop", "ultraviewer_service" }),
         new RemoteTool("ScreenConnect", new[] { "screenconnect.windowsclient", "screenconnect.clientservice" }),
         new RemoteTool("RustDesk", new[] { "rustdesk" }),
@@ -42,7 +42,14 @@ public static class Lists
         new RemoteTool("Ammyy Admin", new[] { "aa_v3" }),
         new RemoteTool("Quick Assist", new[] { "quickassist" }),
         new RemoteTool("Chrome Remote Desktop", new[] { "remoting_host", "remoting_desktop" }),
-        new RemoteTool("LogMeIn", new[] { "logmein", "logmeinsystray" }),
+        new RemoteTool("LogMeIn", new[] { "logmein", "logmeinsystray", "lmiguardiansvc", "logmeinguardsvc" }),
+        new RemoteTool("Splashtop", new[] { "srservice", "srfeature", "srmanager", "strwinclt", "splashtopsos" }),
+        new RemoteTool("AnyViewer", new[] { "anyviewer", "rcclient", "rcservice" }),
+        new RemoteTool("HopToDesk", new[] { "hoptodesk" }),
+        new RemoteTool("Remote Utilities", new[] { "rutserv", "rfusclient" }),
+        new RemoteTool("AweSun", new[] { "awesun" }),
+        new RemoteTool("ToDesk", new[] { "todesk", "todesk_service" }),
+        new RemoteTool("RemotePC", new[] { "remotepcservice" }),
         new RemoteTool("Zoho Assist", new[] { "za_connect", "zohotray" }),
     };
 

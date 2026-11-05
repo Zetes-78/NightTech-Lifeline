@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using NightTech.Lifeline.Core;
@@ -19,25 +21,7 @@ public static class CutOff
         var result = new CutOffResult { When = DateTime.Now };
         int session = Rescuer.CurrentSession();
 
-        foreach (var p in Rescuer.SafeProcesses())
-        {
-            using (p)
-            {
-                var tool = Lists.RemoteToolFor(Rescuer.SafeName(p));
-                if (tool is null) continue;
-                bool closed = false;
-                if (Rescuer.InSession(p, session))
-                {
-                    try { p.Kill(); closed = true; }
-                    catch (Exception e) when (e is Win32Exception or InvalidOperationException or NotSupportedException) { closed = p.HasExitedSafe(); }
-                }
-                if (closed) { if (!result.RemoteToolsClosed.Contains(tool.Name)) result.RemoteToolsClosed.Add(tool.Name); }
-                else if (!result.RemoteToolsStillRunning.Contains(tool.Name)) result.RemoteToolsStillRunning.Add(tool.Name);
-            }
-        }
-        // A tool closed in this session may still have a service running elsewhere; list it once, as still running.
-        result.RemoteToolsClosed.RemoveAll(result.RemoteToolsStillRunning.Contains);
-
+        // Wi-Fi goes off first, so a background service can't hand the connection back while apps are being closed.
         try
         {
             var access = await Radio.RequestAccessAsync();
@@ -60,11 +44,37 @@ public static class CutOff
                 }
             }
         }
-        catch (Exception e) when (e is UnauthorizedAccessException or InvalidOperationException or System.Runtime.InteropServices.COMException or NotSupportedException)
+        catch (Exception e) when (e is not OutOfMemoryException)
         {
             result.WifiTurnedOff = false;
             result.WifiNote = "this computer doesn't allow it";
         }
+
+        // Then close the remote-control apps. Take hold of each first (see Rescuer), then close.
+        var found = new List<(Process P, RemoteTool Tool)>();
+        foreach (var p in Rescuer.SafeProcesses())
+        {
+            var tool = Lists.RemoteToolFor(Rescuer.SafeName(p));
+            if (tool is null) { p.Dispose(); continue; }
+            if (Rescuer.InSession(p, session)) Rescuer.Hold(p);
+            found.Add((p, tool));
+        }
+        foreach (var (p, tool) in found)
+        {
+            using (p)
+            {
+                bool closed = false;
+                if (Rescuer.InSession(p, session))
+                {
+                    try { p.Kill(); closed = true; }
+                    catch (Exception e) when (e is Win32Exception or InvalidOperationException or NotSupportedException) { closed = p.HasExitedSafe(); }
+                }
+                if (closed) { if (!result.RemoteToolsClosed.Contains(tool.Name)) result.RemoteToolsClosed.Add(tool.Name); }
+                else if (!result.RemoteToolsStillRunning.Contains(tool.Name)) result.RemoteToolsStillRunning.Add(tool.Name);
+            }
+        }
+        // A tool closed in this session may still have a service running elsewhere; list it once, as still running.
+        result.RemoteToolsClosed.RemoveAll(result.RemoteToolsStillRunning.Contains);
 
         Store.Log(Words.LogLine(result));
         return result;
@@ -81,7 +91,7 @@ public static class CutOff
                 if (r.State == RadioState.Off && await r.SetStateAsync(RadioState.On) != RadioAccessStatus.Allowed) ok = false;
             return ok;
         }
-        catch (Exception e) when (e is UnauthorizedAccessException or InvalidOperationException or System.Runtime.InteropServices.COMException or NotSupportedException)
+        catch (Exception e) when (e is not OutOfMemoryException)
         {
             return false;
         }

@@ -24,20 +24,25 @@ public static class Rescuer
         var killed = new List<(int Pid, string Name)>();
 
         // Close every browser process in this session. Browsers run many processes; any one left keeps the window alive.
+        // First take hold of each one (an open handle stops Windows giving its number to a new program), then close them,
+        // so closing the main window's process can never lead to closing some other program that reused a number.
+        var targets = new List<(Process P, string Name, string Label)>();
         foreach (var p in SafeProcesses())
+        {
+            var name = SafeName(p);
+            if (Lists.BrowsersFor(name).Any() && InSession(p, session) && Hold(p)) targets.Add((p, Lists.Normalize(name), Label(name)));
+            else p.Dispose();
+        }
+        foreach (var (p, name, label) in targets)
         {
             using (p)
             {
-                if (!InSession(p, session)) continue;
-                var name = SafeName(p);
-                if (!Lists.BrowsersFor(name).Any()) continue;
-                var label = Label(name);
                 try
                 {
+                    killed.Add((p.Id, name));
                     p.Kill();
-                    killed.Add((p.Id, Lists.Normalize(name)));
                     result.BrowsersClosed[label] = result.BrowsersClosed.TryGetValue(label, out var n) ? n + 1 : 1;
-                    closedNames.Add(Lists.Normalize(name));
+                    closedNames.Add(name);
                 }
                 catch (Exception e) when (e is Win32Exception or InvalidOperationException or NotSupportedException)
                 {
@@ -130,6 +135,13 @@ public static class Rescuer
             catch (InvalidOperationException) { }
         }
         return left;
+    }
+
+    /// <summary>Opens a handle to the process now. Returns false if it's already gone or can't be opened (then it's left alone).</summary>
+    internal static bool Hold(Process p)
+    {
+        try { return !p.SafeHandle.IsInvalid; }
+        catch (Exception e) when (e is Win32Exception or InvalidOperationException or NotSupportedException) { return false; }
     }
 
     internal static int CurrentSession()

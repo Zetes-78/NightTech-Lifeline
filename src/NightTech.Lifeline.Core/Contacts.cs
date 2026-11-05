@@ -50,11 +50,32 @@ public sealed class FamilyContact
     /// <summary>A display name: printable characters only, trimmed to 40.</summary>
     public static string CleanName(string? name)
     {
-        var s = new string((name ?? "").Where(c => !char.IsControl(c) && c != '‮' && c != '‭').ToArray()).Trim();
+        var s = new string((name ?? "").Where(c => !char.IsControl(c) && char.GetUnicodeCategory(c) != System.Globalization.UnicodeCategory.Format).ToArray()).Trim();
         return s.Length > MaxName ? s[..MaxName].Trim() : s;
     }
 
+    /// <summary>When the contact was saved, shown under the button so a change by someone else stands out.</summary>
+    public DateTime? Added { get; set; }
+
     public bool IsSet => Name.Length > 0 && PhoneNumber.Normalize(Phone) is not null;
+
+    /// <summary>
+    /// Words a scammer would use to dress up their own number as someone official ("Microsoft Support", "Bank Security").
+    /// The family button is for a person the owner knows, so names like these are refused.
+    /// </summary>
+    public static readonly string[] OfficialWords =
+    {
+        "microsoft", "windows", "apple", "google", "amazon", "paypal", "norton", "mcafee", "geek squad", "support", "security",
+        "technician", "tech", "help desk", "helpdesk", "bank", "irs", "social security", "medicare", "police", "sheriff", "fbi",
+        "government", "night tech", "refund", "fraud", "customer service",
+    };
+
+    public static bool LooksOfficial(string name)
+    {
+        var n = " " + new string(name.ToLowerInvariant().Select(c => char.IsLetterOrDigit(c) ? c : ' ').ToArray()) + " ";
+        while (n.Contains("  ")) n = n.Replace("  ", " ");
+        return OfficialWords.Any(w => n.Contains(" " + w + " ", StringComparison.Ordinal));
+    }
 }
 
 public sealed class Settings
@@ -79,7 +100,8 @@ public sealed class Settings
             s.WelcomeShown = read.WelcomeShown;
             var name = FamilyContact.CleanName(read.Family?.Name);
             var phone = PhoneNumber.Normalize(read.Family?.Phone);
-            if (name.Length > 0 && phone is not null) s.Family = new FamilyContact { Name = name, Phone = phone };
+            if (name.Length > 0 && phone is not null && !FamilyContact.LooksOfficial(name))
+                s.Family = new FamilyContact { Name = name, Phone = phone, Added = read.Family?.Added };
         }
         catch (JsonException) { }
         return s;

@@ -29,6 +29,8 @@
     <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
     <DebugType>none</DebugType>
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+    <!-- WinForms is only here for the tray icon; WPF handles DPI through app.manifest. -->
+    <NoWarn>$(NoWarn);WFAC010</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
